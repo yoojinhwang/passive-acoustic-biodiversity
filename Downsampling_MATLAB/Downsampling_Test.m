@@ -30,7 +30,7 @@ window = hanning(N);
 num_Seconds = (1/fs)*length(x);
 fullTime = x(2:fs*num_Seconds); 
 
-x = x(1:fs*10); % Could change to 5 or 20, it is arbitrary
+x = x(1:fs*60); % Could change to 5 or 20, it is arbitrary
 
 %%% PLOTTING %%%
 
