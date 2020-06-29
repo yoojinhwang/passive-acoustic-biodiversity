@@ -14,15 +14,17 @@ Note that the N-S theorem states, f_sample >= 2*f_max.
 From above, we want to change the sampling rate from 384kHz 
 to 44kHz to isolate the human hearing range. 
 
+Files that have rain in them: 20190614_105000.WAV, 20190614_110000.WAV
+
 %}
 
-[x,fs]=audioread('20190611_205000.WAV');
+[x,fs]=audioread('20190614_110000.WAV');
 n = floor(fs/44000); 
 new_fs = fs/n;
 y = downsample(x, n); 
 
-figure('Name','20190611_205000.WAV');
-sgtitle('20190611-205000.WAV'); 
+figure('Name','20190614_110000.WAV');
+sgtitle('20190614_110000.WAV'); 
 colormap(jet); 
 N = round((512)*(384/44.1)); % Ratio of N
 window = hanning(N);
