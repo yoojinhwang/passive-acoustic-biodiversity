@@ -17,18 +17,18 @@ import soundfile as sf
 import sounddevice as sd
 import matplotlib.pyplot as plt
 
-# datapath = "./Data/"
-# x, fs = sf.read(datapath + '20190617_080000.WAV')
+from memory_profiler import profile
 
-def plot_spectrogram(filename, n): 
-    datapath = "./Data/" # Set here
-    x, fs = sf.read(datapath + filename)
-    
+def plot_spectrogram(x, n): 
     nfft = 1024 # allowed values = {64, 128, 256, 512, 1024, 2048}
-    # Power spectral density 
+    # Compute spectrogram
+    fs = 384000
     f, t, Pxx = spectrogram(x, fs, nfft = nfft, nperseg = nfft, noverlap = nfft/2, window = 'hann', scaling = 'density')
-    # plt.figure(figsize=(18,10))
     
+    # TO DO; avoid the "plt.<...>" calls as much as possible
+    # Use: * fig, axs = plt.subplots(3,1); ax = axs[0] and use ax.plot(x) instead
+    # Reason: it is generally not good to have important state hidden
+    #  in the state of some external library
     plt.figure()
     plt.subplot(3,1,1)
     plt.plot(x)
@@ -55,6 +55,9 @@ def plot_spectrogram(filename, n):
     plt.xlabel('Frequency (Hz)')
     plt.title('Periodogram')
     plt.savefig(f'{n}.png')
+
+    plt.close('all')
+    # TO DO: plt.close(fig)
 
     # plt.show()
 
@@ -93,48 +96,49 @@ def split_into_n_seconds(wav_data, samplerate, n=5):
     print('%d %d-second clips' % (len(second_clips), n))
     return second_clips
 
+
 ### CODING ###
 downsampling_rate = 44100
 original_rate = 384000
 rate_ratio = original_rate/downsampling_rate
 
+### IMPORT DATA ###
 datapath = "./Data/"
 listing = os.listdir(datapath)
 
 ### EACH FILE ###
+@profile
+def full_plot(): 
+    for file in listing:
+        print("Before: ")
+        print(file)
+        x, fs = sf.read(datapath + file)
+        # x = zscore(x) 
+        plot_spectrogram(x, str(file.rsplit('.',1)[0]) + '_before')
 
-for file in listing:
-    print("Before: ")
-    print(file)
-    plot_spectrogram(file, str(file.rsplit('.',1)[0]) + '_before')
-    
-    x, fs = sf.read(datapath + file)
+        # # Split files into 5 second audio clips 
+        split_data = np.array(split_into_n_seconds(x, original_rate, 5))
+        
+        number_of_rows = split_data.shape[0]
+        random_indices = np.random.choice(number_of_rows, size=1, replace=False)
+        x = split_data[random_indices, :]
 
-    print(x)
-    x = zscore(x) 
+        # Sample rate and desired cutoff frequencies (in Hz).
+        # fs needs to be at least 2 x Wn
+        # 191kHz limit due to Nyquist frequency 
 
-    # # Split files into 5 second audio clips 
-    # split_data = np.array(split_into_n_seconds(x, original_rate, 5))
-    
-    # number_of_rows = split_data.shape[0]
-    # random_indices = np.random.choice(number_of_rows, size=1, replace=False)
-    # x = split_data[random_indices, :]
+        # Figure out issues here:
+        x = butter_bandpass_filter(x, 5000, 191000, fs, order=5) 
 
-    # Sample rate and desired cutoff frequencies (in Hz).
-    
-    # # fs needs to be at least 2 x Wn
-    # # 191kHz limit due to Nyquist frequency 
-    print(x)
+        ### DOWNSAMPLING ### 
+        # 2) Scipy's built in resample function 
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample.html
+        print(x)
+        x = scipy_signal.resample(x, int(len(x)*rate_ratio))
+        
+        print("After: ")
+        print(file)
+        plot_spectrogram(x, str(file.rsplit('.',1)[0]) + '_after')
 
-    # Figure out issues here:
-    x = butter_bandpass_filter(x, 5000, 191000, fs, order=5) 
-
-    ### DOWNSAMPLING ### 
-    # 2) Scipy's built in resample function 
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample.html
-    print(x)
-    x = scipy_signal.resample(x, int(len(x)*rate_ratio))
-    
-    print("After: ")
-    print(file)
-    plot_spectrogram(file, str(file.rsplit('.',1)[0]) + '_after')
+if __name__ == '__main__':
+    full_plot()
