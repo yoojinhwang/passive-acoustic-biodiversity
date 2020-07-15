@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 
 from memory_profiler import profile
 
-def plot_spectrogram(x, n): 
+def plot_spectrogram(x, filename):
+    prefix = os.path.spliltext(filename)[0]
     nfft = 1024 # allowed values = {64, 128, 256, 512, 1024, 2048}
     # Compute spectrogram
     fs = 384000
@@ -54,7 +55,7 @@ def plot_spectrogram(x, n):
     plt.ylabel('PSD [V**2/Hz]')
     plt.xlabel('Frequency (Hz)')
     plt.title('Periodogram')
-    plt.savefig(f'{n}.png')
+    plt.savefig(f'{prefix}_spectrogram.png')
 
     plt.close('all')
     # TO DO: plt.close(fig)
